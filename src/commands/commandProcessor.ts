@@ -1,7 +1,12 @@
-import { O_APPEND } from "constants";
 import _ from "lodash";
 import { Interface } from "readline";
 import { CommandInfo } from "./commandInfo";
+import { table } from 'table';
+
+export interface TableOptions {
+  columns: string[];
+  customOptions?: any;
+}
 
 export abstract class CommandProcessor {
   private console: Interface;
@@ -11,6 +16,33 @@ export abstract class CommandProcessor {
 
   protected get Console(): Interface {
     return this.console;
+  }
+
+  protected resolveArgument(argument: string, args: string) {
+    let value = undefined;
+
+    for (const argTuple in _.split(args, " ")) {
+      if (argTuple.indexOf(argument) > -1) {
+        const argumentSize = _.size(argument);
+        value = argTuple.substr(argumentSize);
+        break;
+      }
+    }
+
+    return value;
+  }
+
+  protected buildTable(rows: any[], tableOptions?: TableOptions): string {
+    const tableSource = [];
+    const availableColumns: string[] = Object.keys(_.first(rows));
+    const selectedColumns = tableOptions && tableOptions.columns || availableColumns;
+    const headerItem: string[] = _.filter<string>(availableColumns, (column: string) => _.indexOf(selectedColumns, column) > -1);
+    tableSource.push(headerItem);
+    const rowsSize = _.size(rows);
+    for (let rowIndex = 1; rowIndex < rowsSize; rowIndex++) {
+      tableSource.push(_.values(_.pick(rows[rowIndex], headerItem)));
+    }
+    return table(tableSource);
   }
 
   public get commandToken(): string | undefined {
@@ -29,7 +61,7 @@ export abstract class CommandProcessor {
       if (thisArg.handleCommand(commandInfo)) {
         thisArg.startListening();
       } else {
-        thisArg.console.write("Unrecognized command.");
+        thisArg.console.write(`Unrecognized command: ${command}`);
         thisArg.startListening();
       }
     });
@@ -48,7 +80,6 @@ export abstract class CommandProcessor {
           }
         }
       }
-      this.console.write(`Unrecognized command: ${command.Command}\n`);
       return false;
     }
   }

@@ -1,6 +1,6 @@
 import { Interface } from "readline";
 import { CommandProcessor } from "./commandProcessor";
-import asTable from "as-table";
+import _ from 'lodash';
 
 export const REPORT_TOKEN = "trades";
 
@@ -17,11 +17,17 @@ export default class TradesCommandProcessor extends CommandProcessor {
     return [];
   }
 
-  public listAllCommand() {
-    this.Console.write(asTable.configure({maxTotalWidth: 8, delimiter: '|'})(this.data));
+  public listColumnsCommand() {
+    this.Console.write(this.buildTable([this.data[0]]));
   }
 
-  public listBuysCommand() {}
+  public listAllCommand(args: string) {
+    const columnsArg = this.resolveArgument("-columns", args);
+    const columnsArray = _.split(columnsArg, ",");
+    this.Console.write(this.buildTable(this.data, { columns: columnsArray }));
+  }
+
+  public listBuysCommand() { }
 
   public get commandToken() {
     return REPORT_TOKEN;
