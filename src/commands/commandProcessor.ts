@@ -21,11 +21,16 @@ export abstract class CommandProcessor {
   protected resolveArgument(argument: string, args: string) {
     let value = undefined;
 
-    for (const argTuple in _.split(args, " ")) {
+    for (const argTuple of _.split(args, " ")) {
       if (argTuple.indexOf(argument) > -1) {
-        const argumentSize = _.size(argument);
-        value = argTuple.substr(argumentSize);
-        break;
+        const tupleElements = _.split(argTuple, "=");
+        if (_.size(tupleElements) > 1) {
+          value = tupleElements[1];
+          break;
+        } else {
+          throw new Error(`Invalid argument: ${argTuple}`);
+        }
+
       }
     }
 
