@@ -13,6 +13,19 @@ export default class TradesCommandProcessor extends CommandProcessor {
     super(console);
   }
 
+  protected getHelp(command: string): string {
+    switch (command) {
+      case "listColumns":
+        return "lists the data properties available for a trade entry";
+      case "listAll":
+        return "lists all trade entries";
+      case "listBuys":
+        return "lists all buy trades";
+      default:
+        return "";
+    }
+  }
+
   protected get Prototype(): any {
     return TradesCommandProcessor.prototype;
   }
@@ -27,7 +40,7 @@ export default class TradesCommandProcessor extends CommandProcessor {
 
   public listAllCommand(args: string) {
     const columnsArg = this.resolveArgument("-columns", args);
-    const columnsArray = _.split(columnsArg, ",");
+    const columnsArray = columnsArg && _.split(columnsArg, ",") || [];
     this.Console.write(this.buildTable(this.data, { columns: columnsArray }));
   }
 

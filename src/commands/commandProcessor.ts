@@ -22,11 +22,14 @@ export abstract class CommandProcessor {
     return CommandProcessor.prototype;
   }
 
+  protected abstract getHelp(command: string): string;
+
   private generateHelp() {
     const thisArg: any = this;
     for (const member of Object.getOwnPropertyNames(this.Prototype)) {
       if (_.isFunction(thisArg[member]) && member.endsWith("Command")) {
-        this.consoleInterface.write(`-- ${member.replace("Command", "")}\n`);
+        const commandToken = member.replace("Command", "");
+        this.consoleInterface.write(`-- ${commandToken} - ${this.getHelp(commandToken)}\n`);
       }
     }
   }
@@ -53,7 +56,12 @@ export abstract class CommandProcessor {
   protected buildTable(rows: any[], tableOptions?: TableOptions): string {
     const tableSource = [];
     const availableColumns: string[] = Object.keys(_.first(rows));
-    const selectedColumns = tableOptions && tableOptions.columns || availableColumns;
+    let selectedColumns = availableColumns;
+
+    if (!_.isUndefined(tableOptions) && _.size(tableOptions.columns) > 0) {
+      selectedColumns = tableOptions.columns;
+    }
+
     const headerItem: string[] = _.filter<string>(availableColumns, (column: string) => _.indexOf(selectedColumns, column) > -1);
     tableSource.push(headerItem);
     const rowsSize = _.size(rows);
@@ -76,24 +84,29 @@ export abstract class CommandProcessor {
     this.console.question("", (command: string) => {
       const commandInfo = new CommandInfo(command);
 
-      if (thisArg.handleCommand(commandInfo)) {
+      if (thisArg.handle(commandInfo)) {
         thisArg.startListening();
       } else {
-        thisArg.console.write(`Unrecognized command: ${command}`);
+        thisArg.console.write(`Unrecognized command: ${command}\n`);
         thisArg.startListening();
       }
     });
   }
 
-  public handleCommand(command: CommandInfo): boolean {
-    if (this.canHandleCommand(command)) {
-      this.executeCommand(command);
+  public handle(command: CommandInfo): boolean {
+    if (this.canHandle(command)) {
+      try {
+        this.execute(command);
+      } catch (e) {
+        this.consoleInterface.write(`${e}\n`);
+        return false;
+      }
       return true;
     } else {
       const childProcessors = this.getChildProcessors();
       for (const processor of childProcessors) {
         if (processor.commandToken === command.Command) {
-          if (processor.handleCommand(new CommandInfo(command.ArgsString))) {
+          if (processor.handle(new CommandInfo(command.ArgsString))) {
             return true;
           }
         }
@@ -104,12 +117,12 @@ export abstract class CommandProcessor {
 
   protected abstract getChildProcessors(): CommandProcessor[];
 
-  protected executeCommand(command: CommandInfo) {
+  protected execute(command: CommandInfo) {
     const thisArg: any = this;
     thisArg[`${command.Command}Command`](...command.Args);
   }
 
-  private canHandleCommand(command: CommandInfo): boolean {
+  private canHandle(command: CommandInfo): boolean {
     const { Command: rootCommand } = command;
     if (!_.isUndefined(rootCommand)) {
       const thisArg: any = this;

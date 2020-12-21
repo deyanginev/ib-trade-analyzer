@@ -16,15 +16,29 @@ export class MainCommandProcessor extends CommandProcessor {
     return this.childProcessors;
   }
 
+  protected get Prototype(): any {
+    return MainCommandProcessor.prototype;
+  }
+
+  protected getHelp(command: string): string {
+    switch (command) {
+      case "load":
+        return "<file-path> loads the specified file contents";
+      case "exit":
+        return "terminates the program";
+      case "list":
+        return "lists the currently loaded datasets";
+      default:
+        return "";
+    }
+  }
+
   public exitCommand() {
     process.exit(1);
   }
 
   public listCommand() {
-    this.Console.write("Available commands: \n");
-    this.Console.write("* load -file= - loads the specified file contents \n");
-    this.Console.write("* list - lists all available operations \n");
-    this.Console.write("* exit - terminates the program \n");
+    this.Console.write("Available datasets: \n");
     for (const childProcessor of this.childProcessors) {
       this.Console.write(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription} \n`);
     }
