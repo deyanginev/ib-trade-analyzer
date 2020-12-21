@@ -39,7 +39,7 @@ export abstract class CommandProcessor {
 
     for (const argTuple of _.split(args, " ")) {
       if (argTuple.indexOf(argument) > -1) {
-        const tupleElements = _.split(argTuple, "=");
+        const tupleElements = _.split(argTuple, ":");
         if (_.size(tupleElements) > 1) {
           value = tupleElements[1];
           break;
@@ -55,20 +55,24 @@ export abstract class CommandProcessor {
 
   protected buildTable(rows: any[], tableOptions?: TableOptions): string {
     const tableSource = [];
-    const availableColumns: string[] = Object.keys(_.first(rows));
-    let selectedColumns = availableColumns;
+    if (_.size(rows) > 0) {
+      const availableColumns: string[] = Object.keys(_.first(rows));
+      let selectedColumns = availableColumns;
 
-    if (!_.isUndefined(tableOptions) && _.size(tableOptions.columns) > 0) {
-      selectedColumns = tableOptions.columns;
+      if (!_.isUndefined(tableOptions) && _.size(tableOptions.columns) > 0) {
+        selectedColumns = tableOptions.columns;
+      }
+
+      const headerItem: string[] = _.filter<string>(availableColumns, (column: string) => _.indexOf(selectedColumns, column) > -1);
+      tableSource.push(headerItem);
+      const rowsSize = _.size(rows);
+      for (let rowIndex = 0; rowIndex < rowsSize; rowIndex++) {
+        tableSource.push(_.values(_.pick(rows[rowIndex], headerItem)));
+      }
+      return table(tableSource, tableOptions && tableOptions.customOptions);
     }
 
-    const headerItem: string[] = _.filter<string>(availableColumns, (column: string) => _.indexOf(selectedColumns, column) > -1);
-    tableSource.push(headerItem);
-    const rowsSize = _.size(rows);
-    for (let rowIndex = 1; rowIndex < rowsSize; rowIndex++) {
-      tableSource.push(_.values(_.pick(rows[rowIndex], headerItem)));
-    }
-    return table(tableSource, tableOptions && tableOptions.customOptions);
+    return "No data";
   }
 
   public get commandToken(): string | undefined {
@@ -84,10 +88,16 @@ export abstract class CommandProcessor {
     this.console.question("", (command: string) => {
       const commandInfo = new CommandInfo(command);
 
-      if (thisArg.handle(commandInfo)) {
-        thisArg.startListening();
-      } else {
-        thisArg.console.write(`Unrecognized command: ${command}\n`);
+      try {
+        if (thisArg.handle(commandInfo)) {
+          thisArg.startListening();
+        } else {
+          thisArg.console.write(`Unrecognized command: ${command}\n`);
+          thisArg.startListening();
+        }
+      }
+      catch (e) {
+        this.consoleInterface.write(`${e}\n`);
         thisArg.startListening();
       }
     });
@@ -95,12 +105,7 @@ export abstract class CommandProcessor {
 
   public handle(command: CommandInfo): boolean {
     if (this.canHandle(command)) {
-      try {
-        this.execute(command);
-      } catch (e) {
-        this.consoleInterface.write(`${e}\n`);
-        return false;
-      }
+      this.execute(command);
       return true;
     } else {
       const childProcessors = this.getChildProcessors();
@@ -119,7 +124,7 @@ export abstract class CommandProcessor {
 
   protected execute(command: CommandInfo) {
     const thisArg: any = this;
-    thisArg[`${command.Command}Command`](...command.Args);
+    thisArg[`${command.Command}Command`](command.ArgsString);
   }
 
   private canHandle(command: CommandInfo): boolean {
