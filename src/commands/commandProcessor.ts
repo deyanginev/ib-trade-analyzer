@@ -18,6 +18,19 @@ export abstract class CommandProcessor {
     return this.console;
   }
 
+  protected get Prototype(): any {
+    return CommandProcessor.prototype;
+  }
+
+  private generateHelp() {
+    const thisArg: any = this;
+    for (const member of Object.getOwnPropertyNames(this.Prototype)) {
+      if (_.isFunction(thisArg[member]) && member.endsWith("Command")) {
+        this.consoleInterface.write(`-- ${member.replace("Command", "")}\n`);
+      }
+    }
+  }
+
   protected resolveArgument(argument: string, args: string) {
     let value = undefined;
 
@@ -47,7 +60,7 @@ export abstract class CommandProcessor {
     for (let rowIndex = 1; rowIndex < rowsSize; rowIndex++) {
       tableSource.push(_.values(_.pick(rows[rowIndex], headerItem)));
     }
-    return table(tableSource);
+    return table(tableSource, tableOptions && tableOptions.customOptions);
   }
 
   public get commandToken(): string | undefined {
@@ -103,5 +116,9 @@ export abstract class CommandProcessor {
       return _.isFunction(thisArg[`${rootCommand}Command`]);
     }
     return false;
+  }
+
+  public helpCommand() {
+    this.generateHelp();
   }
 }

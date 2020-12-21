@@ -13,6 +13,10 @@ export default class TradesCommandProcessor extends CommandProcessor {
     super(console);
   }
 
+  protected get Prototype(): any {
+    return TradesCommandProcessor.prototype;
+  }
+
   protected getChildProcessors(): CommandProcessor[] {
     return [];
   }

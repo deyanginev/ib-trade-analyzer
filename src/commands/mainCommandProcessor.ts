@@ -1,8 +1,8 @@
 import { CommandProcessor } from "./commandProcessor";
 import _ from "lodash";
-import fs = require("fs");
+import fs from "fs";
 import parse from "csv-parse/lib/sync";
-import * as moment from "moment";
+import moment from "moment";
 import { Interface } from "readline";
 
 export class MainCommandProcessor extends CommandProcessor {
@@ -26,7 +26,7 @@ export class MainCommandProcessor extends CommandProcessor {
     this.Console.write("* list - lists all available operations \n");
     this.Console.write("* exit - terminates the program \n");
     for (const childProcessor of this.childProcessors) {
-        this.Console.write(`* ${childProcessor.commandToken} - terminates the program \n`);
+      this.Console.write(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription} \n`);
     }
   }
 

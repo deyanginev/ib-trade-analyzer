@@ -1,6 +1,5 @@
-import readline = require("readline");
+import readline from "readline";
 import { MainCommandProcessor } from "../src/commands/mainCommandProcessor";
-import { CommandInfo } from "../src/commands/commandInfo";
 
 const consoleInterface = readline.createInterface({
   input: process.stdin,
