@@ -1,0 +1,14 @@
+{
+    "window.zoomLevel": 0,
+    "workbench.iconTheme": "vscode-icons",
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "files.exclude": {
+        "demo/**/*.js": true,
+        "demo/**/*.map": true,
+        "src/**/*.js": true,
+        "src/**/*.js.map": true
+    },
+    "typescript.updateImportsOnFileMove.enabled": "always"
+}
