@@ -1,34 +1,36 @@
 import { Interface } from "readline";
 import { CommandProcessor } from "./commandProcessor";
-import { parse, eval } from 'expression-eval';
-import _ from 'lodash';
+import { parse, eval } from "expression-eval";
+import _ from "lodash";
 
 export const REPORT_TOKEN = "trades";
 
 export default class TradesCommandProcessor extends CommandProcessor {
-  constructor(
-    console: Interface,
-    private key: string,
-    private data: Array<any>
-  ) {
+  constructor(console: Interface, private data: Array<any>) {
     super(console);
+  }
+
+  protected get Prototype(): any {
+    return TradesCommandProcessor.prototype;
+  }
+
+  public get commandToken() {
+    return REPORT_TOKEN;
+  }
+
+  public get processorDescription() {
+    return `Performs various operations on the ${this.commandToken} table.`;
   }
 
   protected getHelp(command: string): string {
     switch (command) {
       case "listColumns":
         return "lists the data properties available for a trade entry";
-      case "listAll":
-        return "lists all trade entries";
-      case "listBuys":
-        return "lists all buy trades";
+      case "list":
+        return "lists trade entries based on selected columns and applied filters";
       default:
         return "";
     }
-  }
-
-  protected get Prototype(): any {
-    return TradesCommandProcessor.prototype;
   }
 
   protected getChildProcessors(): CommandProcessor[] {
@@ -42,7 +44,9 @@ export default class TradesCommandProcessor extends CommandProcessor {
       const filterExpressions = filtersArg.split(",");
       for (const expression of filterExpressions) {
         const parsedExpression = parse(expression);
-        dataWrapper = dataWrapper.filter(dataItem => eval(parsedExpression, dataItem));
+        dataWrapper = dataWrapper.filter((dataItem) =>
+          eval(parsedExpression, dataItem)
+        );
       }
     }
 
@@ -50,23 +54,43 @@ export default class TradesCommandProcessor extends CommandProcessor {
   }
 
   public listColumnsCommand() {
-    this.Console.write(this.buildTable([this.data[0]]));
+    const keys = Object.keys(this.data[0]);
+    let tableColumns = "";
+    for (const key of keys) {
+      tableColumns += `* ${key}\n`;
+    }
+
+    this.Console.write(tableColumns);
   }
 
-  public listAllCommand(args: string) {
+  public listCommand(args: string) {
     const filteredData = this.processFilters(args);
     const columnsArg = this.resolveArgument("-columns", args);
-    const columnsArray = columnsArg && _.split(columnsArg, ",") || [];
-    this.Console.write(this.buildTable(filteredData, { columns: columnsArray }));
+    const dateFormat = this.resolveArgument("-dateFormat", args);
+    const columnsArray = (columnsArg && _.split(columnsArg, ",")) || [];
+    this.Console.write(
+      this.buildTable(filteredData, { columns: columnsArray, dateFormat })
+    );
   }
 
-  public listBuysCommand() { }
-
-  public get commandToken() {
-    return REPORT_TOKEN;
-  }
-
-  public get processorDescription() {
-    return `Performs various operations on the ${this.commandToken} table.`;
+  public listTradesCommand(args: string) {
+    const columnsArg = this.resolveArgument("-columns", args);
+    const columnsArray = (columnsArg && _.split(columnsArg, ",")) || [];
+    const dateFormat = this.resolveArgument("-dateFormat", args);
+    const data = _(this.data)
+      // we filter out rows representing a trade
+      .filter(
+        (item: any) =>
+          item.header === "Data" && item.datadiscriminator === "Order"
+      )
+      // we filter out sold positions; in this case quantity is a negative number
+      .filter((item: any) => item.quantity < 0)
+      .groupBy("symbol")
+      .forOwn((value: any[], key: string) => {
+        this.Console.write(`TRADES FOR SYMBOL: ${key}\n`);
+        this.Console.write(
+          this.buildTable(value, { columns: columnsArray, dateFormat })
+        );  
+      });
   }
 }

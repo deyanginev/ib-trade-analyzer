@@ -1,10 +1,14 @@
 import _ from "lodash";
 import { Interface } from "readline";
 import { CommandInfo } from "./commandInfo";
-import { table } from 'table';
+import { table } from "table";
+import moment from 'moment';
+
+const DEFAULT_DATE_FORMAT = "YYYY/MM/DD";
 
 export interface TableOptions {
   columns: string[];
+  dateFormat?: string;
   customOptions?: any;
 }
 
@@ -29,7 +33,9 @@ export abstract class CommandProcessor {
     for (const member of Object.getOwnPropertyNames(this.Prototype)) {
       if (_.isFunction(thisArg[member]) && member.endsWith("Command")) {
         const commandToken = member.replace("Command", "");
-        this.consoleInterface.write(`-- ${commandToken} - ${this.getHelp(commandToken)}\n`);
+        this.consoleInterface.write(
+          `-- ${commandToken} - ${this.getHelp(commandToken)}\n`
+        );
       }
     }
   }
@@ -46,7 +52,6 @@ export abstract class CommandProcessor {
         } else {
           throw new Error(`Invalid argument: ${argTuple}`);
         }
-
       }
     }
 
@@ -63,11 +68,24 @@ export abstract class CommandProcessor {
         selectedColumns = tableOptions.columns;
       }
 
-      const headerItem: string[] = _.filter<string>(availableColumns, (column: string) => _.indexOf(selectedColumns, column) > -1);
+      const headerItem: string[] = _.filter<string>(
+        availableColumns,
+        (column: string) => _.indexOf(selectedColumns, column) > -1
+      );
       tableSource.push(headerItem);
       const rowsSize = _.size(rows);
       for (let rowIndex = 0; rowIndex < rowsSize; rowIndex++) {
-        tableSource.push(_.values(_.pick(rows[rowIndex], headerItem)));
+        const dataItem = _(rows[rowIndex])
+        .pick(headerItem)
+        .values()
+        .map(rowValue =>{
+          if (_.isDate(rowValue)) {
+            return moment(rowValue).format(_.get(tableOptions, 'dateFormat', DEFAULT_DATE_FORMAT));
+          }
+          return rowValue;
+        } )
+        .value();
+        tableSource.push(dataItem);
       }
       return table(tableSource, tableOptions && tableOptions.customOptions);
     }
@@ -95,8 +113,7 @@ export abstract class CommandProcessor {
           thisArg.console.write(`Unrecognized command: ${command}\n`);
           thisArg.startListening();
         }
-      }
-      catch (e) {
+      } catch (e) {
         this.consoleInterface.write(`${e}\n`);
         thisArg.startListening();
       }

@@ -121,7 +121,7 @@ export class MainCommandProcessor extends CommandProcessor {
           });
           const lowerCaseKey = key.toLowerCase();
           if (reportMetas[lowerCaseKey]) {
-            return new reportMetas[lowerCaseKey](this.Console, key, parsedCsv);
+            return new reportMetas[lowerCaseKey](this.Console, parsedCsv);
           }
         } catch (e) {
           // We skip out records that are not structured
