@@ -75,22 +75,24 @@ export default class TradesCommandProcessor extends CommandProcessor {
 
   public listTradesCommand(args: string) {
     const columnsArg = this.resolveArgument("-columns", args);
-    const columnsArray = (columnsArg && _.split(columnsArg, ",")) || [];
+    const columnsArray = (columnsArg && _.split(columnsArg, ",")) || ['symbol', 'proceeds', 'datadiscriminator', 'datetime', 'basis', 'realizedpl'];
     const dateFormat = this.resolveArgument("-dateFormat", args);
     const data = _(this.data)
       // we filter out rows representing a trade
       .filter(
         (item: any) =>
-          item.header === "Data" && item.datadiscriminator === "Order"
+          item.header === "Data" &&
+          (item.datadiscriminator === "Trade" ||
+            item.datadiscriminator === "ClosedLot")
       )
-      // we filter out sold positions; in this case quantity is a negative number
-      .filter((item: any) => item.quantity < 0)
+      // we filter out sold positions and their corresponding lots; in this case quantity is a negative number
+      .filter((item: any) => item.datadiscriminator === "Trade" && item.quantity < 0 || item.datadiscriminator === "ClosedLot")
       .groupBy("symbol")
       .forOwn((value: any[], key: string) => {
         this.Console.write(`TRADES FOR SYMBOL: ${key}\n`);
         this.Console.write(
           this.buildTable(value, { columns: columnsArray, dateFormat })
-        );  
+        );
       });
   }
 }
