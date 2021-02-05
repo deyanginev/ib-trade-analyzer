@@ -1,8 +1,8 @@
 import _ from "lodash";
-import { Interface } from "readline";
 import { CommandInfo } from "./commandInfo";
 import { table } from "table";
-import moment from 'moment';
+import moment from "moment";
+import { IConsole } from "../console/console";
 
 const DEFAULT_DATE_FORMAT = "YYYY/MM/DD";
 
@@ -13,13 +13,8 @@ export interface TableOptions {
 }
 
 export abstract class CommandProcessor {
-  private console: Interface;
-  constructor(protected consoleInterface: Interface) {
-    this.console = consoleInterface;
-  }
-
-  protected get Console(): Interface {
-    return this.console;
+  constructor(protected consoleInterface: IConsole) {
+  
   }
 
   protected get Prototype(): any {
@@ -40,7 +35,10 @@ export abstract class CommandProcessor {
     }
   }
 
-  protected resolveArgument(argument: string, args: string) {
+  protected resolveArgument(
+    argument: string,
+    args: string
+  ): string | undefined {
     let value = undefined;
 
     for (const argTuple of _.split(args, " ")) {
@@ -76,15 +74,17 @@ export abstract class CommandProcessor {
       const rowsSize = _.size(rows);
       for (let rowIndex = 0; rowIndex < rowsSize; rowIndex++) {
         const dataItem = _(rows[rowIndex])
-        .pick(headerItem)
-        .values()
-        .map(rowValue =>{
-          if (_.isDate(rowValue)) {
-            return moment(rowValue).format(_.get(tableOptions, 'dateFormat', DEFAULT_DATE_FORMAT));
-          }
-          return rowValue;
-        } )
-        .value();
+          .pick(headerItem)
+          .values()
+          .map((rowValue) => {
+            if (_.isDate(rowValue)) {
+              return moment(rowValue).format(
+                _.get(tableOptions, "dateFormat", DEFAULT_DATE_FORMAT)
+              );
+            }
+            return rowValue;
+          })
+          .value();
         tableSource.push(dataItem);
       }
       return table(tableSource, tableOptions && tableOptions.customOptions);
@@ -103,14 +103,14 @@ export abstract class CommandProcessor {
 
   public startListening() {
     const thisArg = this;
-    this.console.question("", (command: string) => {
+    this.consoleInterface.prompt("", (command: string) => {
       const commandInfo = new CommandInfo(command);
 
       try {
         if (thisArg.handle(commandInfo)) {
           thisArg.startListening();
         } else {
-          thisArg.console.write(`Unrecognized command: ${command}\n`);
+          thisArg.consoleInterface.write(`Unrecognized command: ${command}\n`);
           thisArg.startListening();
         }
       } catch (e) {

@@ -3,12 +3,12 @@ import _ from "lodash";
 import fs from "fs";
 import parse from "csv-parse/lib/sync";
 import moment from "moment";
-import { Interface } from "readline";
+import { IConsole } from "../console/console";
 
 export class MainCommandProcessor extends CommandProcessor {
   private childProcessors: CommandProcessor[] = [];
 
-  constructor(console: Interface) {
+  constructor(console: IConsole) {
     super(console);
   }
 
@@ -38,9 +38,9 @@ export class MainCommandProcessor extends CommandProcessor {
   }
 
   public listCommand() {
-    this.Console.write("Available datasets: \n");
+    this.consoleInterface.write("Available datasets: \n");
     for (const childProcessor of this.childProcessors) {
-      this.Console.write(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription} \n`);
+      this.consoleInterface.write(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription} \n`);
     }
   }
 
@@ -121,7 +121,7 @@ export class MainCommandProcessor extends CommandProcessor {
           });
           const lowerCaseKey = key.toLowerCase();
           if (reportMetas[lowerCaseKey]) {
-            return new reportMetas[lowerCaseKey](this.Console, parsedCsv);
+            return new reportMetas[lowerCaseKey](this.consoleInterface, parsedCsv);
           }
         } catch (e) {
           // We skip out records that are not structured

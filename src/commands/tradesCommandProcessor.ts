@@ -2,11 +2,12 @@ import { Interface } from "readline";
 import { CommandProcessor } from "./commandProcessor";
 import { parse, eval } from "expression-eval";
 import _ from "lodash";
+import { IConsole } from "../console/console";
 
 export const REPORT_TOKEN = "trades";
 
 export default class TradesCommandProcessor extends CommandProcessor {
-  constructor(console: Interface, private data: Array<any>) {
+  constructor(console: IConsole, private data: Array<any>) {
     super(console);
   }
 
@@ -37,11 +38,10 @@ export default class TradesCommandProcessor extends CommandProcessor {
     return [];
   }
 
-  private processFilters(args: string): any[] {
-    const filtersArg = this.resolveArgument("-filter", args);
+  private processFilters(filterString?: string): any[] {
     let dataWrapper = _(this.data);
-    if (filtersArg) {
-      const filterExpressions = filtersArg.split(",");
+    if (filterString) {
+      const filterExpressions = filterString.split(",");
       for (const expression of filterExpressions) {
         const parsedExpression = parse(expression);
         dataWrapper = dataWrapper.filter((dataItem) =>
@@ -60,37 +60,45 @@ export default class TradesCommandProcessor extends CommandProcessor {
       tableColumns += `* ${key}\n`;
     }
 
-    this.Console.write(tableColumns);
+    this.consoleInterface.write(tableColumns);
   }
 
   public listCommand(args: string) {
-    const filteredData = this.processFilters(args);
+    const filtersString = this.resolveArgument("-filter", args);
+    const filteredData = this.processFilters(filtersString);
     const columnsArg = this.resolveArgument("-columns", args);
     const dateFormat = this.resolveArgument("-dateFormat", args);
     const columnsArray = (columnsArg && _.split(columnsArg, ",")) || [];
-    this.Console.write(
+    this.consoleInterface.write(
       this.buildTable(filteredData, { columns: columnsArray, dateFormat })
     );
   }
 
   public listTradesCommand(args: string) {
     const columnsArg = this.resolveArgument("-columns", args);
-    const columnsArray = (columnsArg && _.split(columnsArg, ",")) || ['symbol', 'proceeds', 'datadiscriminator', 'datetime', 'basis', 'realizedpl'];
+    const columnsArray = (columnsArg && _.split(columnsArg, ",")) || [
+      "symbol",
+      "proceeds",
+      "datadiscriminator",
+      "datetime",
+      "basis",
+      "realizedpl",
+      "quantity",
+    ];
     const dateFormat = this.resolveArgument("-dateFormat", args);
-    const data = _(this.data)
-      // we filter out rows representing a trade
-      .filter(
-        (item: any) =>
-          item.header === "Data" &&
-          (item.datadiscriminator === "Trade" ||
-            item.datadiscriminator === "ClosedLot")
-      )
-      // we filter out sold positions and their corresponding lots; in this case quantity is a negative number
-      .filter((item: any) => item.datadiscriminator === "Trade" && item.quantity < 0 || item.datadiscriminator === "ClosedLot")
+    const filterString = this.resolveArgument("-filter", args);
+
+    let filteredData = this.processFilters(filterString);
+    // we filter out sold positions and their corresponding lots; in this case quantity is a negative number
+    filteredData = this.processFilters(
+      'datadiscriminator === "Trade" && quantity < 0 || datadiscriminator === "ClosedLot"'
+    );
+
+    _(filteredData)
       .groupBy("symbol")
       .forOwn((value: any[], key: string) => {
-        this.Console.write(`TRADES FOR SYMBOL: ${key}\n`);
-        this.Console.write(
+        this.consoleInterface.write(`TRADES FOR SYMBOL: ${key}\n`);
+        this.consoleInterface.write(
           this.buildTable(value, { columns: columnsArray, dateFormat })
         );
       });
