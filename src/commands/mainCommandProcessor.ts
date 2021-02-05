@@ -46,6 +46,9 @@ export class MainCommandProcessor extends CommandProcessor {
 
   public loadCommand(file: string) {
     this.childProcessors = this.generateChildProcessors(file);
+    for (const processor of this.childProcessors) {
+      this.consoleInterface.write(`Loaded dataset: ${processor.commandToken}`);
+    }
   }
 
   private loadReportMetadata(): { [key: string]: any } {

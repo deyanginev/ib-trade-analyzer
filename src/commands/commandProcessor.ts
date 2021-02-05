@@ -110,11 +110,11 @@ export abstract class CommandProcessor {
         if (thisArg.handle(commandInfo)) {
           this.consoleInterface.prompt();
         } else {
-          thisArg.consoleInterface.writeLine(`Unrecognized command: ${command}`);
+          thisArg.consoleInterface.write(`Unrecognized command: ${command}`);
           this.consoleInterface.prompt();
         }
       } catch (e) {
-        this.consoleInterface.write(`${e}\n`);
+        this.consoleInterface.write(`${e}`);
         this.consoleInterface.prompt();
       }
     };
