@@ -28,8 +28,8 @@ export abstract class CommandProcessor {
     for (const member of Object.getOwnPropertyNames(this.Prototype)) {
       if (_.isFunction(thisArg[member]) && member.endsWith("Command")) {
         const commandToken = member.replace("Command", "");
-        this.consoleInterface.write(
-          `-- ${commandToken} - ${this.getHelp(commandToken)}\n`
+        this.consoleInterface.writeLine(
+          `-- ${commandToken} - ${this.getHelp(commandToken)}`
         );
       }
     }
@@ -101,23 +101,25 @@ export abstract class CommandProcessor {
     return "";
   }
 
-  public startListening() {
+  public start() {
     const thisArg = this;
-    this.consoleInterface.prompt("", (command: string) => {
+    const commandCallback = (command: string) => {
       const commandInfo = new CommandInfo(command);
 
       try {
         if (thisArg.handle(commandInfo)) {
-          thisArg.startListening();
+          this.consoleInterface.prompt();
         } else {
-          thisArg.consoleInterface.write(`Unrecognized command: ${command}\n`);
-          thisArg.startListening();
+          thisArg.consoleInterface.writeLine(`Unrecognized command: ${command}`);
+          this.consoleInterface.prompt();
         }
       } catch (e) {
         this.consoleInterface.write(`${e}\n`);
-        thisArg.startListening();
+        this.consoleInterface.prompt();
       }
-    });
+    };
+    this.consoleInterface.addEventListener("line", commandCallback);
+    this.consoleInterface.prompt();
   }
 
   public handle(command: CommandInfo): boolean {

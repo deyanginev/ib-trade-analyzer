@@ -1,4 +1,3 @@
-import { Interface } from "readline";
 import { CommandProcessor } from "./commandProcessor";
 import { parse, eval } from "expression-eval";
 import _ from "lodash";
@@ -97,7 +96,7 @@ export default class TradesCommandProcessor extends CommandProcessor {
     _(filteredData)
       .groupBy("symbol")
       .forOwn((value: any[], key: string) => {
-        this.consoleInterface.write(`TRADES FOR SYMBOL: ${key}\n`);
+        this.consoleInterface.writeLine(`TRADES FOR SYMBOL: ${key}`);
         this.consoleInterface.write(
           this.buildTable(value, { columns: columnsArray, dateFormat })
         );

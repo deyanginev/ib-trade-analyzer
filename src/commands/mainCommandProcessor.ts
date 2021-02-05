@@ -38,9 +38,9 @@ export class MainCommandProcessor extends CommandProcessor {
   }
 
   public listCommand() {
-    this.consoleInterface.write("Available datasets: \n");
+    this.consoleInterface.writeLine("Available datasets:");
     for (const childProcessor of this.childProcessors) {
-      this.consoleInterface.write(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription} \n`);
+      this.consoleInterface.writeLine(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription}`);
     }
   }
 

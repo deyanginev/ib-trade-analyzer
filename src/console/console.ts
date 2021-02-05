@@ -1,21 +1,43 @@
 import { Interface } from "readline";
 
 export interface IConsole {
-    write(data: string): void;
-    prompt(data: string, callback: (response: string) => void): void;
+  write(data: string): void;
+  writeLine(data: string): void;
+  prompt(): void;
+  setPrompt(data: string): void;
+  addEventListener(event: string, callback: (data: string) => void): void;
+  removeEventListener(event: string): void;
 }
 
 export class DefaultConsole implements IConsole {
+  constructor(private console: Interface) {
+    this.console.setMaxListeners(1);
+  }
 
-    constructor(private console: Interface) {
+  public addEventListener(
+    event: string,
+    callback: (data: string) => void
+  ): void {
+    this.console.addListener(event, callback);
+  }
 
-    }
+  public removeEventListener(event: string): void {
+    this.console.removeAllListeners(event);
+  }
 
-    public write(data: string): void {
-        this.console.write(data);
-    }
+  public prompt(): void {
+    this.console.prompt();
+  }
 
-    public prompt(data: string, callback: (response: string) => void): void {
-        this.console.question(data, callback);
-    }
+  public setPrompt(data: string): void {
+    this.console.setPrompt(data);
+  }
+
+  public write(data: string): void {
+    console.log(data);
+  }
+
+  public writeLine(data: string): void {
+    console.log(data);
+  }
 }
