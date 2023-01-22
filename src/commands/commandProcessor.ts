@@ -13,9 +13,7 @@ export interface TableOptions {
 }
 
 export abstract class CommandProcessor {
-  constructor(protected consoleInterface: IConsole) {
-  
-  }
+  constructor(protected consoleInterface: IConsole) {}
 
   protected get Prototype(): any {
     return CommandProcessor.prototype;
@@ -41,16 +39,37 @@ export abstract class CommandProcessor {
   ): string | undefined {
     let value = undefined;
 
-    for (const argTuple of _.split(args, " ")) {
-      if (argTuple.indexOf(argument) > -1) {
-        const tupleElements = _.split(argTuple, ":");
-        if (_.size(tupleElements) > 1) {
-          value = tupleElements[1];
-          break;
+    const argumentWithDelimiter = `${argument}:`;
+    const indexOfArgumentWithDelimiter = args.indexOf(argumentWithDelimiter);
+    if (indexOfArgumentWithDelimiter > -1) {
+      const filterString = [];
+
+      let charIndex =
+        indexOfArgumentWithDelimiter + argumentWithDelimiter.length;
+
+      if (args[charIndex] !== '"') {
+        throw new Error(`Invalid input at: ${charIndex}`);
+      }
+
+      let escapeNext = false;
+      while (true) {
+        charIndex++;
+
+        if (args[charIndex] === '"') {
+          if (!escapeNext) {
+            break;
+          }
+          escapeNext = false;
+        }
+
+        if (args[charIndex] === "\\") {
+          escapeNext = true;
         } else {
-          throw new Error(`Invalid argument: ${argTuple}`);
+          filterString.push(args[charIndex]);
         }
       }
+
+      value = filterString.join('');
     }
 
     return value;

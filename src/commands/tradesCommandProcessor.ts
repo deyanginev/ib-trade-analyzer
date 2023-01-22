@@ -37,16 +37,13 @@ export default class TradesCommandProcessor extends CommandProcessor {
     return [];
   }
 
-  private processFilters(filterString?: string): any[] {
-    let dataWrapper = _(this.data);
+  private processFilters(data: Array<any>, filterString?: string): any[] {
+    let dataWrapper = _(data);
     if (filterString) {
-      const filterExpressions = filterString.split(",");
-      for (const expression of filterExpressions) {
-        const parsedExpression = parse(expression);
-        dataWrapper = dataWrapper.filter((dataItem) =>
-          eval(parsedExpression, dataItem)
-        );
-      }
+      const filterExpression = parse(filterString);
+      dataWrapper = dataWrapper.filter((dataItem) =>
+        eval(filterExpression, dataItem)
+      );
     }
 
     return dataWrapper.value();
@@ -64,7 +61,7 @@ export default class TradesCommandProcessor extends CommandProcessor {
 
   public listCommand(args: string) {
     const filtersString = this.resolveArgument("-filter", args);
-    const filteredData = this.processFilters(filtersString);
+    const filteredData = this.processFilters(this.data, filtersString);
     const columnsArg = this.resolveArgument("-columns", args);
     const dateFormat = this.resolveArgument("-dateFormat", args);
     const columnsArray = (columnsArg && _.split(columnsArg, ",")) || [];
@@ -83,23 +80,19 @@ export default class TradesCommandProcessor extends CommandProcessor {
       "basis",
       "realizedpl",
       "quantity",
+      "currency",
     ];
     const dateFormat = this.resolveArgument("-dateFormat", args);
     const filterString = this.resolveArgument("-filter", args);
 
-    let filteredData = this.processFilters(filterString);
-    // we filter out sold positions and their corresponding lots; in this case quantity is a negative number
-    filteredData = this.processFilters(
-      'datadiscriminator === "Trade" && quantity < 0 || datadiscriminator === "ClosedLot"'
-    );
+    const filteredData = this.processFilters(this.data, filterString);
 
-    _(filteredData)
-      .groupBy("symbol")
-      .forOwn((value: any[], key: string) => {
-        this.consoleInterface.writeLine(`TRADES FOR SYMBOL: ${key}`);
-        this.consoleInterface.write(
-          this.buildTable(value, { columns: columnsArray, dateFormat })
-        );
-      });
+    const groups = _(filteredData).groupBy("symbol").value();
+    this.consoleInterface.printGroups(
+      groups,
+      (groupKey: string) => `TRADES FOR SYMBOL: ${groupKey}`,
+      (groupItems: Array<any>) =>
+        this.buildTable(groupItems, { columns: columnsArray, dateFormat })
+    );
   }
 }

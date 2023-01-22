@@ -39,16 +39,12 @@ export class MainCommandProcessor extends CommandProcessor {
 
   public listCommand() {
     this.consoleInterface.writeLine("Available datasets:");
-    for (const childProcessor of this.childProcessors) {
-      this.consoleInterface.writeLine(`* ${childProcessor.commandToken} - ${childProcessor.processorDescription}`);
-    }
+    this.consoleInterface.printItems(this.childProcessors, processor => `* ${processor.commandToken} - ${processor.processorDescription}`);
   }
 
   public loadCommand(file: string) {
     this.childProcessors = this.generateChildProcessors(file);
-    for (const processor of this.childProcessors) {
-      this.consoleInterface.write(`Loaded dataset: ${processor.commandToken}`);
-    }
+    this.consoleInterface.printItems(this.childProcessors, processor => `Loaded dataset: ${processor.commandToken}`);
   }
 
   private loadReportMetadata(): { [key: string]: any } {
@@ -88,8 +84,8 @@ export class MainCommandProcessor extends CommandProcessor {
         const trimmedLine = line.trim();
         const indexOfFirstDelimiter = trimmedLine.indexOf(",");
         return {
-          category: trimmedLine.trim().substr(0, indexOfFirstDelimiter),
-          content: trimmedLine.substr(indexOfFirstDelimiter + 1),
+          category: trimmedLine.trim().substring(0, indexOfFirstDelimiter),
+          content: trimmedLine.substring(indexOfFirstDelimiter + 1),
         };
       })
       .groupBy((lineInfo) => lineInfo.category)
